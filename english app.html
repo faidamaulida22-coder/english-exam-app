@@ -1,0 +1,935 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Learning English is Fun - English for Life</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        ocean: {
+                            50: '#E0F2FE',
+                            100: '#BAE6FD',
+                            500: '#38BDF8',
+                            600: '#0284C7',
+                            700: '#006994',
+                            800: '#0369A1',
+                            900: '#075985',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col select-none">
+
+    <!-- MAIN APP CONTAINER -->
+    <div id="app" class="flex-1 flex flex-col">
+        <!-- Will be rendered dynamically via JS -->
+    </div>
+
+    <!-- FOOTER INFO & HIDDEN ADMIN ACCESS -->
+    <footer class="bg-white border-t border-slate-200 py-3 px-4 text-center text-xs text-slate-500 flex justify-between items-center">
+        <span>© 2026 Learning English is Fun • Faidatun Nurul Maulida, S.Pd.</span>
+        <button onclick="openAdminLogin()" class="text-slate-400 hover:text-ocean-700 transition flex items-center gap-1 font-medium">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+            Admin Guru
+        </button>
+    </footer>
+
+    <!-- ADMIN LOGIN MODAL -->
+    <div id="adminLoginModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 relative">
+            <h3 class="text-lg font-bold text-slate-800 mb-2">Login Dashboard Guru</h3>
+            <p class="text-xs text-slate-500 mb-4">Masukkan password khusus pengajar untuk mengakses pengaturan ujian dan rekap nilai.</p>
+            <input type="password" id="adminPassInput" placeholder="Password (admin123)" class="w-full px-4 py-2 border border-slate-300 rounded-lg mb-4 text-sm focus:ring-2 focus:ring-ocean-600 focus:outline-none">
+            <div class="flex gap-2">
+                <button onclick="closeAdminLogin()" class="flex-1 px-4 py-2 bg-slate-100 text-slate-600 rounded-lg text-sm font-medium hover:bg-slate-200">Batal</button>
+                <button onclick="verifyAdminLogin()" class="flex-1 px-4 py-2 bg-ocean-700 text-white rounded-lg text-sm font-medium hover:bg-ocean-800">Masuk</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- WARNING MODAL ANTI-CHEAT -->
+    <div id="warningModal" class="fixed inset-0 bg-red-600/90 z-50 hidden flex flex-col items-center justify-center p-6 text-white text-center">
+        <div class="bg-white text-slate-800 rounded-2xl p-6 max-w-sm w-full shadow-2xl">
+            <div class="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl font-bold">⚠️</div>
+            <h2 class="text-lg font-bold text-red-600 mb-2">PERINGATAN / PELANGGARAN!</h2>
+            <p id="warningText" class="text-sm text-slate-600 mb-6">Anda terdeteksi meninggalkan halaman ujian atau membuka aplikasi lain!</p>
+            <button onclick="closeWarningModal()" class="w-full py-3 bg-red-600 text-white rounded-xl font-semibold shadow-lg hover:bg-red-700">Saya Mengerti, Kembali ke Ujian</button>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT APP LOGIC -->
+    <script>
+        // --- STORAGE & INITIAL DATA (25 SOAL ANALYTICAL EXPOSITION KELAS XI C2-C5) ---
+        const DEFAULT_STATE = {
+            view: 'student-login',
+            student: { name: '', class: 'XIIB', token: '' },
+            exam: {
+                durationMinutes: 45,
+                timeLeft: 45 * 60,
+                activeTokens: { XA: 'ENG10A', XB: 'ENG10B', XIA: 'ENG11A', XIB: 'ENG11B', XIIA: 'ENG12A', XIIB: 'ENG12B' },
+                maxViolations: 3,
+                showScoreAfterSubmit: true
+            },
+            questions: [
+                // TEXT 1: Reading Books (Q1 - Q5)
+                {
+                    id: 1,
+                    classLevel: 'XI',
+                    passage: "TEXT 1\n\n'Reading books is an activity that offers numerous benefits for individuals of all ages, yet many modern teenagers prefer scrolling through social media. First, reading expands vocabulary and improves language skills. When readers encounter new words in context, their brain naturally absorbs their meanings and usage. Second, reading enhances critical thinking. Unlike watching short video clips, books require sustained attention, encouraging the brain to analyze complex plots, arguments, and perspectives. Finally, reading reduces stress by transporting the mind into another world. Therefore, making reading a daily habit is crucial for mental growth and personal development.'",
+                    question: "(C2 - Structure: Thesis Identification) Paragraph 1 of the text functions as the Thesis of an analytical exposition. What is the specific purpose of this paragraph?",
+                    options: { A: "To restate the writer's final conclusion and recommendation.", B: "To introduce the topic and state the writer's position or point of view.", C: "To provide opposing arguments from modern teenagers.", D: "To list chronological events of history." },
+                    key: "B"
+                },
+                {
+                    id: 2,
+                    classLevel: 'XI',
+                    passage: "Refer to Text 1 about Reading Books.",
+                    question: "(C2 - Understanding Detail) According to the text, how does reading books help improve language skills?",
+                    options: { A: "By forcing readers to memorize thick dictionaries every day.", B: "By allowing readers to encounter new words in context and absorb their meanings naturally.", C: "By replacing social media entirely with audiobooks.", D: "By teaching readers how to write short video scripts." },
+                    key: "B"
+                },
+                {
+                    id: 3,
+                    classLevel: 'XI',
+                    passage: "Refer to Text 1 about Reading Books.",
+                    question: "(C3 - Applying) If a student wants to improve their analytical skills when facing a complex problem, based on the text, which action should they take?",
+                    options: { A: "Spend more time scrolling through short social media clips.", B: "Read books that require sustained attention and analyze complex arguments.", C: "Avoid reading long texts to prevent mental stress.", D: "Watch movies instead of reading printed materials." },
+                    key: "B"
+                },
+                {
+                    id: 4,
+                    classLevel: 'XI',
+                    passage: "Refer to Text 1 about Reading Books.",
+                    question: "(C4 - Language Feature: Internal Conjunctions) Look at the transition words \"First\", \"Second\", and \"Finally\" used in the text. In analytical exposition, what is the grammatical function of these words?",
+                    options: { A: "As causal conjunctions to show cause and effect.", B: "As internal conjunctions (connectives) to sequence arguments logically.", C: "As temporal conjunctions to tell a story in chronological order.", D: "As passive verbs to describe actions done to the subject." },
+                    key: "B"
+                },
+                {
+                    id: 5,
+                    classLevel: 'XI',
+                    passage: "Refer to Text 1 about Reading Books.",
+                    question: "(C5 - Language Feature: Evaluative Language) The writer uses words like \"crucial\", \"essential\", or \"beneficial\" in the text. What is the linguistic purpose of these evaluative adjectives in an analytical exposition?",
+                    options: { A: "To show neutral and objective scientific data.", B: "To express the writer's strong attitude, judgment, or persuasion on the issue.", C: "To confuse the readers with difficult vocabulary.", D: "To indicate physical movement and action." },
+                    key: "B"
+                },
+
+                // TEXT 2: Social Media (Q6 - Q10)
+                {
+                    id: 6,
+                    classLevel: 'XI',
+                    passage: "TEXT 2\n\n'Social media platforms have become an integral part of teenagers' lives, but their excessive use poses serious psychological risks. To begin with, constant exposure to idealized lives on Instagram and TikTok often triggers severe feelings of inadequacy and low self-esteem. Teenagers frequently compare their behind-the-scenes reality with everyone else's highlight reels. Furthermore, excessive social media consumption is directly linked to sleep deprivation. The blue light emitted by screens suppresses melatonin production, while late-night scrolling keeps the brain active when it should be resting. Last but not least, cyberbullying has emerged as a pervasive threat on these platforms, causing anxiety and depression among vulnerable youths. Given these alarming issues, parents and educators must guide teenagers toward healthier digital boundaries.'",
+                    question: "(C2 - Understanding) What is the primary issue discussed in the text?",
+                    options: { A: "The benefits of digital marketing on social media.", B: "The psychological risks and harms of excessive social media use for teenagers.", C: "How to become a popular influencer on TikTok and Instagram.", D: "The technical features of blue light screens on smartphones." },
+                    key: "B"
+                },
+                {
+                    id: 7,
+                    classLevel: 'XI',
+                    passage: "Refer to Text 2 about Social Media.",
+                    question: "(C2 - Understanding) Why do teenagers often experience feelings of inadequacy according to the passage?",
+                    options: { A: "Because they compare their real lives with others' curated highlight reels.", B: "Because schools forbid them from bringing smartphones to class.", C: "Because social media apps are too expensive to download.", D: "Because they spend too much time studying offline." },
+                    key: "A"
+                },
+                {
+                    id: 8,
+                    classLevel: 'XI',
+                    passage: "Refer to Text 2 about Social Media.",
+                    question: "(C3 - Applying) A parent notices their teenager staying awake until 2 AM scrolling through social media and waking up exhausted. Which scientific explanation from the text applies to this situation?",
+                    options: { A: "The teenager is suffering from academic stress.", B: "Blue light suppresses melatonin and late-night scrolling keeps the brain active.", C: "The teenager is eating too much junk food before bedtime.", D: "Social media platforms provide educational tutorials at night." },
+                    key: "B"
+                },
+                {
+                    id: 9,
+                    classLevel: 'XI',
+                    passage: "Refer to Text 2 about Social Media.",
+                    question: "(C4 - Structure Analysis) How does the author structure the arguments in the body paragraphs?",
+                    options: { A: "By presenting three distinct negative impacts (self-esteem, sleep deprivation, cyberbullying) to support the thesis.", B: "By comparing the history of traditional media with modern digital platforms.", C: "By providing chronological steps on how to delete social media accounts.", D: "By refuting counter-arguments made by teenagers." },
+                    key: "A"
+                },
+                {
+                    id: 10,
+                    classLevel: 'XI',
+                    passage: "Refer to Text 2 about Social Media.",
+                    question: "(C5 - Language Feature: Mental Verbs) Which phrase from the text contains a mental verb or psychological perception term?",
+                    options: { A: "emit melatonin production", B: "triggers severe feelings of inadequacy", C: "bring smartphones to class", D: "download mobile applications" },
+                    key: "B"
+                },
+
+                // TEXT 3: Fast Food (Q11 - Q15)
+                {
+                    id: 11,
+                    classLevel: 'XI',
+                    passage: "TEXT 3\n\n'Fast food has gained immense popularity due to its convenience and affordable price, especially among busy urban workers and students. However, consuming fast food regularly brings detrimental effects to human health. Primarily, fast food is heavily loaded with unhealthy trans fats, refined sugars, and excessive sodium. Regular intake of these components significantly increases the risk of obesity, type 2 diabetes, and cardiovascular diseases. In addition, fast food lacks essential dietary fiber, vitamins, and minerals that the body needs for optimal immune function. Relying on nutrient-deficient meals leaves individuals feeling fatigued and lethargic throughout the day. Therefore, it is imperative to limit fast food consumption and embrace wholesome, home-cooked meals.'",
+                    question: "(C2 - Understanding) What is the writer's thesis regarding fast food?",
+                    options: { A: "Fast food is the best culinary choice for busy urban workers.", B: "Fast food brings detrimental health effects and should be limited in favor of home-cooked meals.", C: "Fast food provides all necessary vitamins and minerals for immunity.", D: "Fast food is expensive and difficult to purchase in cities." },
+                    key: "B"
+                },
+                {
+                    id: 12,
+                    classLevel: 'XI',
+                    passage: "Refer to Text 3 about Fast Food.",
+                    question: "(C2 - Understanding) What specific health risks are associated with the regular intake of trans fats and refined sugars found in fast food?",
+                    options: { A: "Improved memory and enhanced physical stamina.", B: "Obesity, type 2 diabetes, and cardiovascular diseases.", C: "Stronger immune system and better metabolism.", D: "Higher concentration levels in school and work." },
+                    key: "B"
+                },
+                {
+                    id: 13,
+                    classLevel: 'XI',
+                    passage: "Refer to Text 3 about Fast Food.",
+                    question: "(C3 - Applying) An office worker frequently feels tired and lethargic during afternoon working hours because they eat burgers and fries every day. Which reason from the text explains this condition?",
+                    options: { A: "Fast food lacks essential dietary fiber, vitamins, and minerals.", B: "Fast food contains too much natural green vegetables.", C: "Fast food is digested too quickly by the stomach.", D: "Fast food lowers body temperature excessively." },
+                    key: "A"
+                },
+                {
+                    id: 14,
+                    classLevel: 'XI',
+                    passage: "Refer to Text 3 about Fast Food.",
+                    question: "(C4 - Language Feature: Causal Conjunctions) What causal relationship does the author establish between fast food and physical health?",
+                    options: { A: "Fast food causes nutritional deficiencies and chronic diseases due to high trans fats, sodium, and low vitamins.", B: "Fast food prevents cardiovascular diseases by providing quick energy.", C: "Fast food has no direct connection to human metabolism.", D: "Fast food improves immunity when consumed daily." },
+                    key: "A"
+                },
+                {
+                    id: 15,
+                    classLevel: 'XI',
+                    passage: "Refer to Text 3 about Fast Food.",
+                    question: "(C5 - Structure: Reiteration) Which sentence acts as the Reiteration (conclusion and recommendation) of the text?",
+                    options: { A: "Fast food has gained immense popularity due to its convenience...", B: "Primarily, fast food is heavily loaded with unhealthy trans fats...", C: "Relying on nutrient-deficient meals leaves individuals feeling fatigued...", D: "Therefore, it is imperative to limit fast food consumption and embrace wholesome, home-cooked meals." },
+                    key: "D"
+                },
+
+                // TEXT 4: Electric Cars (Q16 - Q20)
+                {
+                    id: 16,
+                    classLevel: 'XI',
+                    passage: "TEXT 4\n\n'The transition from gasoline-powered vehicles to electric cars (EVs) is no longer just a futuristic concept; it is an urgent necessity for our planet. Traditional automobiles burn fossil fuels, releasing massive amounts of carbon dioxide and toxic pollutants into the atmosphere, which accelerates global warming. Electric cars, on the other hand, produce zero tailpipe emissions, making them significantly cleaner for urban air quality. Furthermore, as renewable energy sources like solar and wind power expand, charging EVs becomes even more eco-friendly. While initial purchasing costs and charging infrastructure remain challenges in some developing regions, the long-term environmental and economic advantages outweigh these temporary hurdles. Governments and citizens must fully support the adoption of electric mobility.'",
+                    question: "(C2 - Understanding) What is the main argument presented in the text?",
+                    options: { A: "Electric cars are too expensive for anyone to purchase.", B: "Transitioning to electric cars is an urgent necessity to combat pollution and global warming.", C: "Gasoline-powered cars are much safer than electric vehicles.", D: "Renewable energy sources are no longer needed worldwide." },
+                    key: "B"
+                },
+                {
+                    id: 17,
+                    classLevel: 'XI',
+                    passage: "Refer to Text 4 about Electric Cars.",
+                    question: "(C2 - Understanding) According to the text, what is the primary environmental advantage of electric cars over traditional automobiles?",
+                    options: { A: "They are faster on highways.", B: "They produce zero tailpipe emissions.", C: "They do not require any maintenance.", D: "They are made entirely of recycled plastic." },
+                    key: "B"
+                },
+                {
+                    id: 18,
+                    classLevel: 'XI',
+                    passage: "Refer to Text 4 about Electric Cars.",
+                    question: "(C3 - Applying) A city experiences severe smog and respiratory illnesses due to thousands of gasoline vehicles. Based on the passage, what policy should local authorities promote?",
+                    options: { A: "Encourage citizens to drive older diesel trucks.", B: "Support the adoption and infrastructure of electric vehicles.", C: "Ban bicycles from public roads.", D: "Increase fossil fuel importation." },
+                    key: "B"
+                },
+                {
+                    id: 19,
+                    classLevel: 'XI',
+                    passage: "Refer to Text 4 about Electric Cars.",
+                    question: "(C4 - Analyzing Counter-arguments) How does the author address potential counter-arguments regarding electric cars?",
+                    options: { A: "By ignoring them completely and pretending no challenges exist.", B: "By acknowledging initial costs and infrastructure hurdles, but arguing that long-term advantages outweigh them.", C: "By blaming developing countries for climate change.", D: "By stating that gasoline cars will soon become extinct naturally." },
+                    key: "B"
+                },
+                {
+                    id: 20,
+                    classLevel: 'XI',
+                    passage: "Refer to Text 4 about Electric Cars.",
+                    question: "(C5 - Language Feature: Modality) The text ends with \"Governments and citizens must fully support...\". The word \"must\" is an example of what language feature in analytical exposition?",
+                    options: { A: "Past tense verb", B: "Modality (expressing obligation or strong recommendation)", C: "Passive voice connector", D: "Adverb of time" },
+                    key: "B"
+                },
+
+                // TEXT 5: Learning a Second Language (Q21 - Q25)
+                {
+                    id: 21,
+                    classLevel: 'XI',
+                    passage: "TEXT 5\n\n'In an increasingly globalized world, mastering a second language is a valuable asset rather than just an academic requirement. First and foremost, bilingualism boosts cognitive abilities. Studies show that switching between languages exercises the brain, improving problem-solving skills, memory, and mental flexibility. Additionally, knowing another language opens up vast career opportunities. Multinational corporations actively seek employees who can communicate fluently with international clients and partners. Lastly, learning a new language fosters cultural empathy, allowing individuals to appreciate diverse traditions and worldviews without cultural barriers. Given these profound cognitive, professional, and social rewards, schools and individuals should prioritize language acquisition.'",
+                    question: "(C2 - Understanding) What is the writer's thesis statement in the text?",
+                    options: { A: "Learning a second language is difficult and unnecessary for modern jobs.", B: "Mastering a second language provides profound cognitive, professional, and social benefits.", C: "Only multinational corporations benefit from bilingual employees.", D: "Second language learning should be restricted to university students." },
+                    key: "B"
+                },
+                {
+                    id: 22,
+                    classLevel: 'XI',
+                    passage: "Refer to Text 5 about Second Language.",
+                    question: "(C2 - Understanding) According to the passage, how does bilingualism affect cognitive abilities?",
+                    options: { A: "It slows down mental processing speed.", B: "It improves problem-solving skills, memory, and mental flexibility.", C: "It causes confusion when speaking the native tongue.", D: "It limits creativity in artistic fields." },
+                    key: "B"
+                },
+                {
+                    id: 23,
+                    classLevel: 'XI',
+                    passage: "Refer to Text 5 about Second Language.",
+                    question: "(C3 - Applying) A job applicant wants to stand out in the global job market. Based on the text, what skill should they develop to appeal to multinational corporations?",
+                    options: { A: "Programming in multiple computer languages.", B: "Communicating fluently in a second language with international clients.", C: "Writing traditional essays in their native language.", D: "Memorizing historical dates and facts." },
+                    key: "B"
+                },
+                {
+                    id: 24,
+                    classLevel: 'XI',
+                    passage: "Refer to Text 5 about Second Language.",
+                    question: "(C4 - Structure & Logical Flow) How is the logical structure organized from beginning to end in Text 5?",
+                    options: { A: "Thesis -> Argument 1 (Cognitive) -> Argument 2 (Career) -> Argument 3 (Cultural) -> Reiteration.", B: "Reiteration -> Thesis -> Arguments -> Conclusion.", C: "Problem -> Solution -> Narrative story -> Evaluation.", D: "Thesis -> Counter-argument -> Refutation -> Chronological summary." },
+                    key: "A"
+                },
+                {
+                    id: 25,
+                    classLevel: 'XI',
+                    passage: "Refer to Text 5 about Second Language.",
+                    question: "(C5 - Comprehensive Evaluation) Is the conclusion of the text logically supported by the preceding arguments?",
+                    options: { A: "Yes, because the writer successfully demonstrates cognitive, career, and social advantages.", B: "No, because learning a language has no professional value.", C: "Yes, but only for students who live abroad.", D: "No, because schools should only focus on mathematics and science." },
+                    key: "A"
+                }
+            ],
+            answers: {},
+            flagged: {},
+            currentQIndex: 0,
+            violations: 0,
+            examStatus: 'active',
+            submissions: []
+        };
+
+        let appState = JSON.parse(localStorage.getItem('english_exam_state')) || DEFAULT_STATE;
+        let timerInterval = null;
+
+        function saveState() {
+            localStorage.setItem('english_exam_state', JSON.stringify(appState));
+        }
+
+        function render() {
+            const app = document.getElementById('app');
+            app.innerHTML = '';
+
+            if (appState.view === 'student-login') {
+                app.innerHTML = renderStudentLogin();
+            } else if (appState.view === 'student-exam') {
+                app.innerHTML = renderStudentExam();
+            } else if (appState.view === 'student-result') {
+                app.innerHTML = renderStudentResult();
+            } else if (appState.view === 'teacher-dashboard') {
+                app.innerHTML = renderTeacherDashboard();
+            }
+        }
+
+        // --- 1. STUDENT LOGIN VIEW ---
+        function renderStudentLogin() {
+            return `
+                <div class="flex-1 flex flex-col justify-center items-center p-4 max-w-md mx-auto w-full">
+                    <div class="bg-white rounded-3xl shadow-xl border border-slate-100 p-8 w-full text-center">
+                        <div class="w-16 h-16 bg-ocean-50 text-ocean-700 rounded-2xl flex items-center justify-center mx-auto mb-4 text-2xl font-bold shadow-inner">
+                            📚
+                        </div>
+                        <h1 class="text-2xl font-bold text-slate-900">Learning English is Fun</h1>
+                        <p class="text-sm font-semibold text-ocean-600 mt-1">English for Life</p>
+                        <p class="text-xs text-slate-400 mt-0.5 mb-6">Faidatun Nurul Maulida, S.Pd.</p>
+
+                        <div class="space-y-4 text-left">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Nama Lengkap Siswa</label>
+                                <input type="text" id="inputName" value="${appState.student.name}" placeholder="Contoh: Budi Santoso" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-ocean-600 focus:outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Pilihan Kelas</label>
+                                <select id="inputClass" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-ocean-600 focus:outline-none">
+                                    ${['XA', 'XB', 'XIA', 'XIB', 'XIIA', 'XIIB'].map(cls => `<option value="${cls}" ${appState.student.class === cls ? 'selected' : ''}>Kelas ${cls}</option>`).join('')}
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Token Ujian</label>
+                                <input type="text" id="inputToken" value="${appState.student.token}" placeholder="Masukkan Token Guru" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm uppercase font-mono tracking-wider focus:ring-2 focus:ring-ocean-600 focus:outline-none">
+                            </div>
+                            <button onclick="startExam()" class="w-full py-3.5 bg-ocean-700 hover:bg-ocean-800 text-white rounded-xl font-bold shadow-lg shadow-ocean-700/30 transition duration-200 text-sm mt-2">
+                                Mulai Ujian
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function startExam() {
+            const name = document.getElementById('inputName').value.trim();
+            const selectedClass = document.getElementById('inputClass').value;
+            const token = document.getElementById('inputToken').value.trim().toUpperCase();
+
+            if (!name) { alert('Silakan masukkan nama lengkap Anda.'); return; }
+            if (!token) { alert('Silakan masukkan token ujian.'); return; }
+
+            const expectedToken = appState.exam.activeTokens[selectedClass] || 'ENG12';
+            if (token !== expectedToken) {
+                alert('Token ujian salah untuk kelas tersebut! Periksa kembali token dari guru.');
+                return;
+            }
+
+            appState.student = { name, class: selectedClass, token };
+            appState.view = 'student-exam';
+            appState.exam.timeLeft = appState.exam.durationMinutes * 60;
+            appState.violations = 0;
+            appState.examStatus = 'active';
+            saveState();
+            render();
+            startTimer();
+            initAntiCheat();
+        }
+
+        // --- 2. STUDENT EXAM VIEW ---
+        function renderStudentExam() {
+            const qList = appState.questions;
+            const currentQ = qList[appState.currentQIndex];
+            const minutes = Math.floor(appState.exam.timeLeft / 60);
+            const seconds = appState.exam.timeLeft % 60;
+
+            return `
+                <!-- Sticky Header -->
+                <header class="bg-ocean-700 text-white sticky top-0 z-20 shadow-md px-4 py-3 flex justify-between items-center">
+                    <div>
+                        <h2 class="text-sm font-bold">${appState.student.name}</h2>
+                        <p class="text-xs text-ocean-100">Kelas: ${appState.student.class} | Pelanggaran: <span class="font-bold text-yellow-300">${appState.violations}/${appState.exam.maxViolations}</span></p>
+                    </div>
+                    <div class="bg-ocean-900/60 px-3 py-1.5 rounded-xl border border-ocean-500/30 text-center">
+                        <span class="text-[10px] text-ocean-200 block uppercase font-semibold">Sisa Waktu</span>
+                        <span id="timerDisplay" class="text-sm font-mono font-bold text-yellow-300">${String(minutes).padStart(2,'0')}:${String(seconds).padStart(2,'0')}</span>
+                    </div>
+                </header>
+
+                <!-- Content Area -->
+                <main class="flex-1 max-w-2xl mx-auto w-full p-4 pb-24">
+                    <!-- Question Card -->
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 mb-4">
+                        <div class="flex justify-between items-center mb-3">
+                            <span class="text-xs font-bold text-ocean-700 bg-ocean-50 px-2.5 py-1 rounded-lg">Soal No. ${appState.currentQIndex + 1} dari ${qList.length}</span>
+                            <button onclick="toggleFlag(${currentQ.id})" class="text-xs font-medium px-2.5 py-1 rounded-lg border ${appState.flagged[currentQ.id] ? 'bg-amber-500 text-white border-amber-500' : 'bg-slate-50 text-slate-500 border-slate-200'}">
+                                ${appState.flagged[currentQ.id] ? '⭐️ Ragu-ragu' : '☆ Tandai Ragu'}
+                            </button>
+                        </div>
+
+                        ${currentQ.passage ? `<div class="bg-slate-50 p-4 rounded-xl text-xs sm:text-sm text-slate-700 mb-4 whitespace-pre-line leading-relaxed border border-slate-100 font-serif">${currentQ.passage}</div>` : ''}
+                        
+                        <h3 class="text-sm sm:text-base font-semibold text-slate-900 mb-4">${currentQ.question}</h3>
+
+                        <div class="space-y-2.5">
+                            ${Object.entries(currentQ.options).map(([optKey, optVal]) => `
+                                <label onclick="selectAnswer(${currentQ.id}, '${optKey}')" class="flex items-start gap-3 p-3.5 rounded-xl border cursor-pointer transition ${appState.answers[currentQ.id] === optKey ? 'border-ocean-600 bg-ocean-50/50 text-ocean-900 font-medium' : 'border-slate-200 hover:bg-slate-50 text-slate-700'}">
+                                    <span class="w-6 h-6 rounded-lg flex items-center justify-center text-xs font-bold ${appState.answers[currentQ.id] === optKey ? 'bg-ocean-600 text-white' : 'bg-slate-100 text-slate-600'}">${optKey}</span>
+                                    <span class="text-xs sm:text-sm pt-0.5">${optVal}</span>
+                                </label>
+                            `).join('')}
+                        </div>
+                    </div>
+                </main>
+
+                <!-- Sticky Bottom Navigation -->
+                <footer class="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 p-3 shadow-lg flex justify-between items-center max-w-2xl mx-auto z-10">
+                    <button onclick="prevQuestion()" ${appState.currentQIndex === 0 ? 'disabled' : ''} class="px-4 py-2 bg-slate-100 hover:bg-slate-200 disabled:opacity-40 text-slate-700 rounded-xl text-xs font-bold transition">Sebelumnya</button>
+                    
+                    <button onclick="openQuestionModal()" class="px-3 py-2 bg-ocean-50 text-ocean-700 hover:bg-ocean-100 rounded-xl text-xs font-bold flex items-center gap-1">
+                        📋 Daftar Soal
+                    </button>
+
+                    ${appState.currentQIndex < qList.length - 1 ? 
+                        `<button onclick="nextQuestion()" class="px-5 py-2 bg-ocean-700 hover:bg-ocean-800 text-white rounded-xl text-xs font-bold transition">Selanjutnya</button>` : 
+                        `<button onclick="confirmSubmit()" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition shadow-md shadow-emerald-600/20">Selesai / Kumpul</button>`
+                    }
+                </footer>
+
+                <!-- Question Grid Modal -->
+                <div id="questionModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-30 hidden flex items-center justify-center p-4">
+                    <div class="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl max-h-[80vh] overflow-y-auto">
+                        <div class="flex justify-between items-center mb-4">
+                            <h4 class="font-bold text-sm text-slate-800">Navigasi Nomor Soal</h4>
+                            <button onclick="closeQuestionModal()" class="text-slate-400 hover:text-slate-600 text-lg font-bold">×</button>
+                        </div>
+                        <div class="grid grid-cols-5 gap-2 mb-6">
+                            ${qList.map((q, idx) => {
+                                let statusClass = "bg-slate-100 text-slate-700 border-slate-200";
+                                if (appState.answers[q.id]) statusClass = "bg-ocean-600 text-white border-ocean-600";
+                                if (appState.flagged[q.id]) statusClass = "bg-amber-500 text-white border-amber-500";
+                                if (idx === appState.currentQIndex) statusClass += " ring-2 ring-offset-2 ring-ocean-700";
+                                return `<button onclick="jumpToQuestion(${idx})" class="h-11 rounded-xl border text-xs font-bold ${statusClass}">${idx + 1}</button>`;
+                            }).join('')}
+                        </div>
+                        <button onclick="closeQuestionModal()" class="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold">Tutup</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function startTimer() {
+            if (timerInterval) clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                if (appState.view !== 'student-exam') { clearInterval(timerInterval); return; }
+                if (appState.exam.timeLeft > 0) {
+                    appState.exam.timeLeft--;
+                    saveState();
+                    const timerDisp = document.getElementById('timerDisplay');
+                    if (timerDisp) {
+                        const m = Math.floor(appState.exam.timeLeft / 60);
+                        const s = appState.exam.timeLeft % 60;
+                        timerDisp.innerText = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+                    }
+                } else {
+                    clearInterval(timerInterval);
+                    alert('Waktu ujian telah habis!');
+                    submitExam(true);
+                }
+            }, 1000);
+        }
+
+        function initAntiCheat() {
+            document.addEventListener('visibilitychange', handleVisibilityChange);
+            window.addEventListener('blur', handleBlurEvent);
+        }
+
+        function removeAntiCheat() {
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+            window.removeEventListener('blur', handleBlurEvent);
+        }
+
+        function handleVisibilityChange() {
+            if (document.hidden && appState.view === 'student-exam') {
+                registerViolation("Meninggalkan halaman ujian / tab berpindah.");
+            }
+        }
+
+        function handleBlurEvent() {
+            if (appState.view === 'student-exam') {
+                registerViolation("Kehilangan fokus layar (split screen / keluar aplikasi).");
+            }
+        }
+
+        function registerViolation(reason) {
+            appState.violations++;
+            saveState();
+            
+            const warningModal = document.getElementById('warningModal');
+            const warningText = document.getElementById('warningText');
+            if (warningText) {
+                warningText.innerText = `Peringatan (${appState.violations}/${appState.exam.maxViolations}): ${reason} Tindakan ini telah dicatat dan dilaporkan ke Dashboard Guru.`;
+            }
+            if (warningModal) warningModal.classList.remove('hidden');
+
+            if (appState.violations >= appState.exam.maxViolations) {
+                alert('Batas maksimal pelanggaran terlampaui! Ujian otomatis dikumpulkan.');
+                submitExam(true);
+            }
+        }
+
+        function closeWarningModal() {
+            const warningModal = document.getElementById('warningModal');
+            if (warningModal) warningModal.classList.add('hidden');
+        }
+
+        function selectAnswer(qId, opt) {
+            appState.answers[qId] = opt;
+            saveState();
+            render();
+        }
+
+        function toggleFlag(qId) {
+            appState.flagged[qId] = !appState.flagged[qId];
+            saveState();
+            render();
+        }
+
+        function nextQuestion() {
+            if (appState.currentQIndex < appState.questions.length - 1) {
+                appState.currentQIndex++;
+                saveState();
+                render();
+            }
+        }
+
+        function prevQuestion() {
+            if (appState.currentQIndex > 0) {
+                appState.currentQIndex--;
+                saveState();
+                render();
+            }
+        }
+
+        function jumpToQuestion(idx) {
+            appState.currentQIndex = idx;
+            saveState();
+            render();
+            closeQuestionModal();
+        }
+
+        function openQuestionModal() {
+            document.getElementById('questionModal').classList.remove('hidden');
+        }
+
+        function closeQuestionModal() {
+            document.getElementById('questionModal').classList.add('hidden');
+        }
+
+        function confirmSubmit() {
+            if (confirm('Apakah Anda yakin ingin mengumpulkan jawaban ujian sekarang?')) {
+                submitExam(false);
+            }
+        }
+
+        function submitExam(isAuto = false) {
+            removeAntiCheat();
+            if (timerInterval) clearInterval(timerInterval);
+
+            let correct = 0;
+            let wrong = 0;
+            appState.questions.forEach(q => {
+                if (appState.answers[q.id] === q.key) {
+                    correct++;
+                } else {
+                    wrong++;
+                }
+            });
+            const score = Math.round((correct / appState.questions.length) * 100);
+
+            const submissionRecord = {
+                id: Date.now(),
+                name: appState.student.name,
+                class: appState.student.class,
+                submitTime: new Date().toLocaleTimeString(),
+                correct,
+                wrong,
+                violations: appState.violations,
+                score
+            };
+
+            appState.submissions.push(submissionRecord);
+            appState.view = 'student-result';
+            appState.examStatus = 'submitted';
+            saveState();
+            render();
+        }
+
+        // --- 3. STUDENT RESULT VIEW (KUNCI JAWABAN DISEMBUNYIKAN DARI SISWA) ---
+        function renderStudentResult() {
+            const lastSub = appState.submissions[appState.submissions.length - 1] || { score: 0, correct: 0, wrong: 0, violations: 0 };
+            const showScore = appState.exam.showScoreAfterSubmit;
+
+            return `
+                <div class="flex-1 flex flex-col justify-center items-center p-4 max-w-md mx-auto w-full text-center">
+                    <div class="bg-white rounded-3xl shadow-xl border border-slate-100 p-8 w-full">
+                        <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-2xl flex items-center justify-center mx-auto mb-4 text-2xl font-bold">
+                            ✅
+                        </div>
+                        <h2 class="text-2xl font-bold text-slate-900 mb-1">Ujian Selesai</h2>
+                        <p class="text-xs text-slate-500 mb-6">Terima kasih telah mengerjakan ujian dengan jujur.</p>
+
+                        ${showScore ? `
+                            <div class="bg-ocean-50 rounded-2xl p-4 mb-6 border border-ocean-100">
+                                <span class="text-xs font-bold text-ocean-700 block uppercase mb-1">Skor Akhir Anda</span>
+                                <span class="text-4xl font-black text-ocean-800">${lastSub.score}</span>
+                                <div class="flex justify-center gap-4 mt-3 text-xs text-slate-600 font-medium">
+                                    <span>Benar: <strong class="text-emerald-600">${lastSub.correct}</strong></span>
+                                    <span>Salah: <strong class="text-red-500">${lastSub.wrong}</strong></span>
+                                    <span>Pelanggaran: <strong class="text-amber-600">${lastSub.violations}</strong></span>
+                                </div>
+                            </div>
+                        ` : `
+                            <div class="bg-amber-50 rounded-2xl p-4 mb-6 border border-amber-100 text-amber-800 text-xs font-medium">
+                                Jawaban Anda telah tersimpan otomatis di sistem guru. Nilai akan diumumkan sesuai kebijakan pengajar.
+                            </div>
+                        `}
+
+                        <button onclick="resetToLogin()" class="w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold transition text-sm">
+                            Keluar / Halaman Utama
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function resetToLogin() {
+            appState.view = 'student-login';
+            appState.student = { name: '', class: 'XIIB', token: '' };
+            appState.answers = {};
+            appState.flagged = {};
+            appState.violations = 0;
+            saveState();
+            render();
+        }
+
+        // --- 4. TEACHER DASHBOARD ---
+        let teacherActiveTab = 'tokens';
+
+        function openAdminLogin() {
+            document.getElementById('adminLoginModal').classList.remove('hidden');
+        }
+
+        function closeAdminLogin() {
+            document.getElementById('adminLoginModal').classList.add('hidden');
+        }
+
+        function verifyAdminLogin() {
+            const pass = document.getElementById('adminPassInput').value;
+            if (pass === 'admin123') {
+                closeAdminLogin();
+                appState.view = 'teacher-dashboard';
+                saveState();
+                render();
+            } else {
+                alert('Password salah!');
+            }
+        }
+
+        function renderTeacherDashboard() {
+            return `
+                <div class="flex-1 flex flex-col bg-slate-100">
+                    <header class="bg-ocean-800 text-white px-6 py-4 flex justify-between items-center shadow-md">
+                        <div>
+                            <h1 class="text-lg font-bold">Dashboard Guru - Learning English is Fun</h1>
+                            <p class="text-xs text-ocean-200">Faidatun Nurul Maulida, S.Pd. • English for Life</p>
+                        </div>
+                        <button onclick="resetToLogin()" class="px-4 py-2 bg-ocean-700 hover:bg-ocean-600 text-white rounded-xl text-xs font-bold transition">Keluar ke Siswa</button>
+                    </header>
+
+                    <div class="bg-white border-b border-slate-200 px-6 flex gap-4 overflow-x-auto">
+                        <button onclick="switchTeacherTab('tokens')" class="py-3 px-4 text-xs font-bold border-b-2 ${teacherActiveTab === 'tokens' ? 'border-ocean-600 text-ocean-700' : 'border-transparent text-slate-500 hover:text-slate-800'}">1. Token & Durasi</button>
+                        <button onclick="switchTeacherTab('questions')" class="py-3 px-4 text-xs font-bold border-b-2 ${teacherActiveTab === 'questions' ? 'border-ocean-600 text-ocean-700' : 'border-transparent text-slate-500 hover:text-slate-800'}">2. Bank Soal (${appState.questions.length})</button>
+                        <button onclick="switchTeacherTab('monitoring')" class="py-3 px-4 text-xs font-bold border-b-2 ${teacherActiveTab === 'monitoring' ? 'border-ocean-600 text-ocean-700' : 'border-transparent text-slate-500 hover:text-slate-800'}">3. Live Monitoring</button>
+                        <button onclick="switchTeacherTab('scores')" class="py-3 px-4 text-xs font-bold border-b-2 ${teacherActiveTab === 'scores' ? 'border-ocean-600 text-ocean-700' : 'border-transparent text-slate-500 hover:text-slate-800'}">4. Rekap Nilai</button>
+                    </div>
+
+                    <div class="p-6 max-w-6xl mx-auto w-full flex-1">
+                        ${teacherActiveTab === 'tokens' ? renderTokensTab() : ''}
+                        ${teacherActiveTab === 'questions' ? renderQuestionsTab() : ''}
+                        ${teacherActiveTab === 'monitoring' ? renderMonitoringTab() : ''}
+                        ${teacherActiveTab === 'scores' ? renderScoresTab() : ''}
+                    </div>
+                </div>
+            `;
+        }
+
+        function switchTeacherTab(tab) {
+            teacherActiveTab = tab;
+            render();
+        }
+
+        function renderTokensTab() {
+            return `
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 max-w-xl mx-auto">
+                    <h3 class="text-base font-bold text-slate-800 mb-4">Pengaturan Token & Durasi Ujian</h3>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Durasi Ujian (Menit)</label>
+                            <input type="number" id="settingDuration" value="${appState.exam.durationMinutes}" class="w-full px-4 py-2 border rounded-xl text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Batas Maksimal Pelanggaran</label>
+                            <input type="number" id="settingMaxViolations" value="${appState.exam.maxViolations}" class="w-full px-4 py-2 border rounded-xl text-sm">
+                        </div>
+                        <hr class="my-2">
+                        <h4 class="text-xs font-bold text-ocean-700 uppercase">Token Per Kelas</h4>
+                        <div class="grid grid-cols-2 gap-3">
+                            ${['XA', 'XB', 'XIA', 'XIB', 'XIIA', 'XIIB'].map(cls => `
+                                <div>
+                                    <label class="block text-[11px] font-semibold text-slate-500">Kelas ${cls}</label>
+                                    <div class="flex gap-2 mt-1">
+                                        <input type="text" id="token_${cls}" value="${appState.exam.activeTokens[cls] || ''}" class="w-full px-3 py-1.5 border rounded-lg text-xs uppercase font-mono">
+                                        <button onclick="generateToken('${cls}')" class="px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold">Acak</button>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                        <button onclick="saveExamSettings()" class="w-full mt-4 py-3 bg-ocean-700 hover:bg-ocean-800 text-white rounded-xl text-xs font-bold">Simpan Pengaturan</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function generateToken(cls) {
+            const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+            let token = '';
+            for (let i = 0; i < 6; i++) token += chars.charAt(Math.floor(Math.random() * chars.length));
+            document.getElementById(`token_${cls}`).value = token;
+        }
+
+        function saveExamSettings() {
+            appState.exam.durationMinutes = parseInt(document.getElementById('settingDuration').value) || 45;
+            appState.exam.maxViolations = parseInt(document.getElementById('settingMaxViolations').value) || 3;
+            ['XA', 'XB', 'XIA', 'XIB', 'XIIA', 'XIIB'].forEach(cls => {
+                const val = document.getElementById(`token_${cls}`).value.trim().toUpperCase();
+                if (val) appState.exam.activeTokens[cls] = val;
+            });
+            saveState();
+            alert('Pengaturan ujian berhasil disimpan!');
+            render();
+        }
+
+        function renderQuestionsTab() {
+            return `
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+                    <div class="flex justify-between items-center mb-6">
+                        <div>
+                            <h3 class="text-base font-bold text-slate-800">Daftar Bank Soal (${appState.questions.length} Soal)</h3>
+                            <p class="text-xs text-slate-500">Kelola pertanyaan, pilihan ganda, dan kunci jawaban ujian bahasa Inggris.</p>
+                        </div>
+                        <button onclick="addQuestionPrompt()" class="px-4 py-2 bg-ocean-700 hover:bg-ocean-800 text-white rounded-xl text-xs font-bold">+ Tambah Soal</button>
+                    </div>
+
+                    <div class="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
+                        ${appState.questions.map((q, idx) => `
+                            <div class="border border-slate-200 rounded-xl p-4 flex justify-between items-start">
+                                <div>
+                                    <span class="text-xs font-bold text-ocean-700 bg-ocean-50 px-2 py-0.5 rounded mr-2">Kelas ${q.classLevel}</span>
+                                    <span class="text-xs font-bold text-slate-600">Soal #${idx + 1}</span>
+                                    <p class="text-sm font-semibold text-slate-800 mt-1">${q.question}</p>
+                                    <p class="text-xs text-emerald-600 font-bold mt-1">Kunci Jawaban: ${q.key}</p>
+                                </div>
+                                <button onclick="deleteQuestion(${q.id})" class="text-red-500 hover:text-red-700 text-xs font-bold">Hapus</button>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        function addQuestionPrompt() {
+            const question = prompt("Masukkan Pertanyaan:");
+            if (!question) return;
+            const passage = prompt("Masukkan Teks Bacaan (Reading Passage) - Kosongkan jika tidak ada:");
+            const optA = prompt("Opsi A:");
+            const optB = prompt("Opsi B:");
+            const optC = prompt("Opsi C:");
+            const optD = prompt("Opsi D:");
+            const key = prompt("Kunci Jawaban (A/B/C/D):").toUpperCase();
+            const classLevel = prompt("Jenjang Kelas (X / XI / XII):", "XI").toUpperCase();
+
+            const newQ = {
+                id: Date.now(),
+                classLevel,
+                passage: passage || "",
+                question,
+                options: { A: optA, B: optB, C: optC, D: optD },
+                key
+            };
+
+            appState.questions.push(newQ);
+            saveState();
+            render();
+        }
+
+        function deleteQuestion(id) {
+            if (confirm('Hapus soal ini?')) {
+                appState.questions = appState.questions.filter(q => q.id !== id);
+                saveState();
+                render();
+            }
+        }
+
+        function renderMonitoringTab() {
+            return `
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+                    <h3 class="text-base font-bold text-slate-800 mb-2">Live Monitoring Siswa</h3>
+                    <p class="text-xs text-slate-500 mb-6">Memantau aktivitas dan indikator pelanggaran siswa secara real-time.</p>
+                    
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse text-xs">
+                            <thead>
+                                <tr class="bg-slate-50 text-slate-600 border-b">
+                                    <th class="p-3">Nama Siswa</th>
+                                    <th class="p-3">Kelas</th>
+                                    <th class="p-3">Status</th>
+                                    <th class="p-3">Total Pelanggaran</th>
+                                    <th class="p-3">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${appState.submissions.length === 0 ? `
+                                    <tr><td colspan="5" class="p-4 text-center text-slate-400">Belum ada siswa yang mengumpulkan atau aktif ujian.</td></tr>
+                                ` : appState.submissions.map(sub => `
+                                    <tr class="border-b hover:bg-slate-50">
+                                        <td class="p-3 font-semibold text-slate-800">${sub.name}</td>
+                                        <td class="p-3">${sub.class}</td>
+                                        <td class="p-3"><span class="px-2 py-0.5 bg-emerald-50 text-emerald-700 font-bold rounded">Selesai</span></td>
+                                        <td class="p-3 font-bold ${sub.violations > 0 ? 'text-red-600' : 'text-emerald-600'}">${sub.violations} Pelanggaran</td>
+                                        <td class="p-3"><button onclick="resetStudentStatus('${sub.id}')" class="text-ocean-600 font-bold hover:underline">Reset</button></td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+        }
+
+        function resetStudentStatus(id) {
+            if (confirm('Reset data siswa ini?')) {
+                appState.submissions = appState.submissions.filter(s => s.id != id);
+                saveState();
+                render();
+            }
+        }
+
+        function renderScoresTab() {
+            return `
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+                    <div class="flex justify-between items-center mb-6">
+                        <div>
+                            <h3 class="text-base font-bold text-slate-800">Rekap Nilai Siswa</h3>
+                            <p class="text-xs text-slate-500">Hasil akhir ujian seluruh siswa siap diunduh atau diexport.</p>
+                        </div>
+                        <button onclick="exportToCSV()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold">📥 Export ke CSV / Excel</button>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse text-xs">
+                            <thead>
+                                <tr class="bg-slate-50 text-slate-600 border-b">
+                                    <th class="p-3">Nama Siswa</th>
+                                    <th class="p-3">Kelas</th>
+                                    <th class="p-3">Waktu Submit</th>
+                                    <th class="p-3">Benar / Salah</th>
+                                    <th class="p-3">Pelanggaran</th>
+                                    <th class="p-3">Skor Akhir</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${appState.submissions.length === 0 ? `
+                                    <tr><td colspan="6" class="p-4 text-center text-slate-400">Belum ada data nilai tersedia.</td></tr>
+                                ` : appState.submissions.map(sub => `
+                                    <tr class="border-b hover:bg-slate-50">
+                                        <td class="p-3 font-semibold text-slate-800">${sub.name}</td>
+                                        <td class="p-3">${sub.class}</td>
+                                        <td class="p-3">${sub.submitTime}</td>
+                                        <td class="p-3"><span class="text-emerald-600 font-bold">${sub.correct}</span> / <span class="text-red-500 font-bold">${sub.wrong}</span></td>
+                                        <td class="p-3 font-bold text-slate-600">${sub.violations}</td>
+                                        <td class="p-3 font-black text-ocean-700 text-sm">${sub.score}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+        }
+
+        function exportToCSV() {
+            if (appState.submissions.length === 0) { alert('Belum ada data untuk diexport.'); return; }
+            let csv = 'Nama Siswa,Kelas,Waktu Submit,Benar,Salah,Pelanggaran,Skor Akhir\n';
+            appState.submissions.forEach(s => {
+                csv += `"${s.name}","${s.class}","${s.submitTime}",${s.correct},${s.wrong},${s.violations},${s.score}\n`;
+            });
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `Rekap_Nilai_Ujian_English_${new Date().toISOString().slice(0,10)}.csv`;
+            link.click();
+        }
+
+        render();
+    </script>
+</body>
+</html>
